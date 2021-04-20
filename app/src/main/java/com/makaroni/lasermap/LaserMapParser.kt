@@ -1,8 +1,5 @@
 package com.makaroni.lasermap
 
-import android.opengl.Matrix
-import android.renderscript.Matrix4f
-import android.util.Log
 import com.makaroni.lasermap.utils.ByteUtils
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -15,51 +12,47 @@ object LaserMapParser {
         val bf = ByteBuffer.wrap(ByteArray(bytes.size)).order(ByteOrder.LITTLE_ENDIAN)
     }
 
-    fun decodeLRE(input: String):List<List<Byte>> {
-        val regex = Regex(".{2}")
-        val data = input.replace(" ", "")
-        val result = regex.findAll(data).flatMap { it.groupValues }.zipWithNext().toList()
-        val pairs = result.getCorrectPairs()
-        val decodedList = decodeLrePairs(pairs)
-        val length = 665//getLength()
-        return createMatrix(length,decodedList)
+    fun decodeLRE(input: String): List<List<Byte>> {
+        val data = input.replace(" ", "").replace("\n", "")
+        val byteList = ByteUtils.hexToBytes(data)
+        val pairs = byteList.toMutableList().zipWithNext().toList().getCorrectPairs().toMutableList()
+        val sizePairs = pairs[2]
+        val filteredPairs = pairs.slice(3 until pairs.size)
+        val decodedList = decodeLrePairs(filteredPairs)
+        val length = getLength(sizePairs)
+        return createMatrix(length, decodedList)
     }
 
-    private fun createMatrix(length: Int, data: List<Byte>):List<List<Byte>> {
-        val lists = data.chunked(length)
-        lists[1][2]
-        return lists
+    private fun createMatrix(length: Int, data: List<Byte>) = data.chunked(length)
+
+    private fun getLength(pair: Pair<Byte, Byte>): Int {
+        val bytes = byteArrayOf(pair.second, pair.first)
+        val bf = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+        val result = ByteUtils.parseTwoBytesInt(bytes)
+        return result
     }
 
-    private fun getLength(): Short {
-        val length = ByteUtils.hexToBytes(rectangleLength)
-        val bf = ByteBuffer.wrap(ByteArray(length.size)).order(ByteOrder.LITTLE_ENDIAN)
-        return bf.short
-    }
-
-    fun decodeLrePairs(input: List<Pair<ByteArray, ByteArray>>): List<Byte> {
+    fun decodeLrePairs(input: List<Pair<Byte, Byte>>): List<Byte> {
         val decodedArray = mutableListOf<Byte>()
         input.forEach { pair ->
-            val count = ByteUtils.byteToUnsignedInt(pair.second.first())
-            val byte = pair.first.first()
-            for (i in 0..count) {
-                decodedArray.add(byte)
-            }
+            val count = ByteUtils.byteToUnsignedInt(pair.second)
+            decodedArray.addAll(List(count) {
+                return@List pair.first
+            })
         }
         return decodedArray
     }
 
-    private fun List<Pair<String, String>>.getCorrectPairs(): List<Pair<ByteArray, ByteArray>> {
-        val pairs = mutableListOf<Pair<ByteArray, ByteArray>>()
+    private fun List<Pair<Byte, Byte>>.getCorrectPairs(): List<Pair<Byte, Byte>> {
+        val pairs = mutableListOf<Pair<Byte, Byte>>()
         this.forEachIndexed { index, pair ->
             if (index % 2 != 0) return@forEachIndexed
-            else pairs.add(
-                Pair(
-                    ByteUtils.hexToBytes(pair.first),
-                    ByteUtils.hexToBytes(pair.second)
-                )
-            )
+            else pairs.add(pair)
         }
         return pairs
+    }
+
+    fun writeMapToFile(data: List<Byte>, size: Int) {
+
     }
 }
