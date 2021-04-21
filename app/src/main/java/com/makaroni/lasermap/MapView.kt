@@ -2,6 +2,8 @@ package com.makaroni.lasermap
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Resources
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -21,14 +23,14 @@ class MapView : androidx.appcompat.widget.AppCompatImageView {
     val firstPaint = Paint().apply {
         isFilterBitmap = false
         strokeWidth = 1f
-        isAntiAlias = true
+        isAntiAlias = false
         color = Color.BLUE
     }
 
     val secondPaint = Paint().apply {
         isFilterBitmap = false
         strokeWidth = 1f
-        isAntiAlias = true
+        isAntiAlias = false
         color = Color.GREEN
     }
 
@@ -37,7 +39,7 @@ class MapView : androidx.appcompat.widget.AppCompatImageView {
         strokeCap = Paint.Cap.ROUND
         style = Paint.Style.STROKE
         strokeWidth = 1f
-        isAntiAlias = true
+        isAntiAlias = false
         color = Color.RED
     }
 
@@ -49,7 +51,7 @@ class MapView : androidx.appcompat.widget.AppCompatImageView {
     private val scaleListener = ScaleGestureDetector(context, object : ScaleGestureDetector.OnScaleGestureListener {
         override fun onScale(detector: ScaleGestureDetector?): Boolean {
             val scale = detector?.scaleFactor ?: return false
-            Log.d("TAG","scale = $scale")
+            Log.d("TAG", "scale = $scale")
             scaleFactor =
                     Math.max(minScaleFactor, Math.min(scaleFactor * scale, maxScaleFactor))
             scaleX *= scaleFactor
@@ -136,12 +138,17 @@ class MapView : androidx.appcompat.widget.AppCompatImageView {
 //        Log.d("TAG", "onMEasure")
     }
 
-    override fun onDraw(canvas: Canvas?) {
-//        Log.d("TAG", "onDraw")
-        if (data.isNotEmpty()) {
-            canvas?.translate(posX,posY)
-            canvas?.drawRect(0f, 0f, data.size.toFloat(), data[0].size.toFloat(), thirdPaint)
-        }
+    fun createBitmap() {
+        if (data.isEmpty()) return
+        val width = data.first().size
+        val height = data.size
+        val bitmap = Bitmap.createBitmap(
+                width,
+                height,
+                Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+
         data.forEachIndexed { firstIndex, list ->
 //            Log.d("TAG", "index =$firstIndex")
             list.forEachIndexed { index, byte ->
@@ -151,10 +158,31 @@ class MapView : androidx.appcompat.widget.AppCompatImageView {
                     3.toByte() -> return@forEachIndexed
                     else -> return@forEachIndexed
                 }
-                canvas?.drawPoint(firstIndex.toFloat(), index.toFloat(), paint)
+                canvas.drawPoint(index.toFloat() + 0.5f, firstIndex.toFloat() + 0.5f, paint)
             }
         }
-
-        super.onDraw(canvas)
+        setImageBitmap(bitmap)
     }
+
+//    override fun onDraw(canvas: Canvas?) {
+////        Log.d("TAG", "onDraw")
+//        if (data.isNotEmpty()) {
+//            canvas?.translate(posX, posY)
+//            canvas?.drawRect(0f, 0f, data.size.toFloat(), data[0].size.toFloat(), thirdPaint)
+//        }
+//        data.forEachIndexed { firstIndex, list ->
+////            Log.d("TAG", "index =$firstIndex")
+//            list.forEachIndexed { index, byte ->
+//                val paint = when (byte) {
+//                    1.toByte() -> firstPaint
+//                    2.toByte() -> secondPaint
+//                    3.toByte() -> return@forEachIndexed
+//                    else -> return@forEachIndexed
+//                }
+//                canvas?.drawPoint(index.toFloat(), firstIndex.toFloat(), paint)
+//            }
+//        }
+//
+//        super.onDraw(canvas)
+//    }
 }

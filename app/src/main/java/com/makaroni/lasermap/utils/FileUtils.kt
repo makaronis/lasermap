@@ -1,5 +1,6 @@
 package com.makaroni.lasermap.utils
 
+import android.app.Activity
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
@@ -7,6 +8,8 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import android.webkit.MimeTypeMap
+import com.google.android.material.snackbar.Snackbar
+import com.makaroni.lasermap.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.*
@@ -16,6 +19,8 @@ import java.util.*
 
 
 object FileUtils {
+
+
 
     @JvmStatic
     @Throws(IOException::class)
